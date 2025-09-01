@@ -1,147 +1,188 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Formulário</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background-color: #f8f9fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
-      margin: 0;
-    }
-
-    .caixa-form {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    canvas {
-      border: 2px solid #000;
-      border-radius: 5px;
-      width: 100%;
-      height: 200px;
-      touch-action: none; /* importante para celular/tablet */
-      margin-bottom: 10px;
-    }
-
-    .btn-limpar {
-      background-color: #6d6d6d;
-      color: #fff;
-      margin-bottom: 10px;
-    }
-
-    .btn-limpar:hover {
-      background-color: #6d6d6de6;
-      color: #fff;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulário de Assinatura</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  body {
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    margin: 20px 0;
+  }
+  .caixa-form {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+  }
+  canvas {
+    border: 2px solid #000;
+    border-radius: 5px;
+    width: 100%;
+    height: 200px;
+    touch-action: none;
+    margin-bottom: 10px;
+  }
+  .btn-limpar {
+    background-color: #6d6d6d;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .btn-limpar:hover {
+    background-color: #555;
+  }
+</style>
 </head>
 <body>
 
-  <div class="caixa-form">
-    <h3 class="text-center mb-4">Formulário de Assinatura</h3>
-    
-    <form id="formulario">
-      <label for="nome" class="form-label">Nome</label>
-      <input type="text" id="nome" class="form-control" placeholder="Digite seu nome" required>
+<div class="caixa-form">
+  <h3 class="text-center mb-4">Formulário de Assinatura</h3>
+  
+  <form id="formulario">
+    <label for="nome" class="form-label">Nome</label>
+    <input type="text" id="nome" class="form-control" placeholder="Digite seu nome" required>
 
-      <label for="sap" class="form-label mt-3">SAP</label>
-      <input type="text" id="sap" class="form-control" placeholder="Digite seu SAP" required>
+    <label for="sap" class="form-label mt-3">SAP</label>
+    <input type="text" id="sap" class="form-control" placeholder="Digite seu SAP" required>
 
-      <label class="form-label mt-3">Assinatura</label>
-      <canvas id="canvasAssinatura"></canvas>
-      
-      <button type="button" id="btnLimpar" class="btn btn-limpar w-100">Limpar Assinatura</button>
+    <label class="form-label mt-3">Assinatura</label>
+    <canvas id="canvasAssinatura"></canvas>
+    <button type="button" id="btnLimpar" class="btn btn-limpar w-100">Limpar Assinatura</button>
 
-      <button type="submit" class="btn btn-primary w-100 mt-2">Salvar Assinatura</button>
-    </form>
-  </div>
+    <button type="submit" class="btn btn-primary w-100 mt-2">Salvar Assinatura</button>
+  </form>
+</div>
 
-  <script>
-    // Pegar o canvas e o contexto 2D
-    const canvas = document.getElementById("canvasAssinatura");
-    const caneta = canvas.getContext("2d");
+<div class="caixa-form">
+  <h5>Lista de Pessoas que Assinaram:</h5>
+  <ul id="listaAssinaturas" class="list-group mb-3"></ul>
+  <button id="baixarCSV" class="btn btn-success w-100">Baixar CSV</button>
+</div>
 
-    let desenhando = false; // vai controlar se a pessoa está desenhando
+<script>
+  // -------------------- Canvas --------------------
+  const canvas = document.getElementById("canvasAssinatura");
+  const caneta = canvas.getContext("2d");
+  let desenhando = false;
 
-    // Função para começar a desenhar
-    function comecarDesenho(e) {
-      desenhando = true;
-      caneta.beginPath();
-      const pos = pegarPosicao(e);
-      caneta.moveTo(pos.x, pos.y);
+  function comecarDesenho(e) {
+    desenhando = true;
+    caneta.beginPath();
+    const pos = pegarPosicao(e);
+    caneta.moveTo(pos.x, pos.y);
+  }
+
+  function desenhar(e) {
+    if (!desenhando) return;
+    const pos = pegarPosicao(e);
+    caneta.lineTo(pos.x, pos.y);
+    caneta.stroke();
+  }
+
+  function pararDesenho() {
+    desenhando = false;
+  }
+
+  function pegarPosicao(e) {
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches) {
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top
+      };
+    } else {
+      return { x: e.offsetX, y: e.offsetY };
+    }
+  }
+
+  canvas.addEventListener("mousedown", comecarDesenho);
+  canvas.addEventListener("mousemove", desenhar);
+  canvas.addEventListener("mouseup", pararDesenho);
+  canvas.addEventListener("mouseout", pararDesenho);
+  canvas.addEventListener("touchstart", comecarDesenho);
+  canvas.addEventListener("touchmove", desenhar);
+  canvas.addEventListener("touchend", pararDesenho);
+
+  document.getElementById("btnLimpar").addEventListener("click", function() {
+    caneta.clearRect(0, 0, canvas.width, canvas.height);
+  });
+
+  // -------------------- Lista de assinaturas --------------------
+  const lista = document.getElementById("listaAssinaturas");
+
+  function atualizarLista() {
+    lista.innerHTML = "";
+    let dados = JSON.parse(localStorage.getItem("assinaturas")) || [];
+    dados.forEach(item => {
+      const li = document.createElement("li");
+      li.className = "list-group-item";
+      li.textContent = `${item.nome} - ${item.sap}`;
+      lista.appendChild(li);
+    });
+  }
+
+  atualizarLista();
+
+  // -------------------- Salvar assinatura --------------------
+  document.getElementById("formulario").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const nome = document.getElementById("nome").value.trim();
+    const sap = document.getElementById("sap").value.trim();
+
+    if (!nome || !sap) {
+      alert("Preencha o nome e SAP antes de salvar.");
+      return;
     }
 
-    // Função para desenhar
-    function desenhar(e) {
-      if (!desenhando) return;
-      const pos = pegarPosicao(e);
-      caneta.lineTo(pos.x, pos.y);
-      caneta.stroke();
+    // Salvar no localStorage
+    let dados = JSON.parse(localStorage.getItem("assinaturas")) || [];
+    dados.push({ nome, sap });
+    localStorage.setItem("assinaturas", JSON.stringify(dados));
+    atualizarLista();
+
+    // Baixar assinatura como PNG
+    const link = document.createElement("a");
+    link.download = `${nome} - ${sap}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+
+    // Limpar formulário e canvas
+    document.getElementById("nome").value = "";
+    document.getElementById("sap").value = "";
+    caneta.clearRect(0, 0, canvas.width, canvas.height);
+  });
+
+  // -------------------- Baixar CSV --------------------
+  document.getElementById("baixarCSV").addEventListener("click", function() {
+    let dados = JSON.parse(localStorage.getItem("assinaturas")) || [];
+    if(dados.length === 0){
+      alert("Nenhuma assinatura para baixar!");
+      return;
     }
 
-    // Função para parar de desenhar
-    function pararDesenho() {
-      desenhando = false;
-    }
-
-    // Função que pega a posição do mouse ou toque
-    function pegarPosicao(e) {
-      const rect = canvas.getBoundingClientRect();
-      if (e.touches) { // se for toque (celular)
-        return {
-          x: e.touches[0].clientX - rect.left,
-          y: e.touches[0].clientY - rect.top
-        };
-      } else { // se for mouse (PC)
-        return { x: e.offsetX, y: e.offsetY };
-      }
-    }
-
-    // Eventos do mouse
-    canvas.addEventListener("mousedown", comecarDesenho);
-    canvas.addEventListener("mousemove", desenhar);
-    canvas.addEventListener("mouseup", pararDesenho);
-    canvas.addEventListener("mouseout", pararDesenho);
-
-    // Eventos de toque (celular)
-    canvas.addEventListener("touchstart", comecarDesenho);
-    canvas.addEventListener("touchmove", desenhar);
-    canvas.addEventListener("touchend", pararDesenho);
-
-    // Botão limpar assinatura
-    document.getElementById("btnLimpar").addEventListener("click", function() {
-      caneta.clearRect(0, 0, canvas.width, canvas.height);
+    // Montar CSV
+    let csv = "Nome,SAP\n";
+    dados.forEach(item => {
+      csv += `"${item.nome}","${item.sap}"\n`;
     });
 
-    // Enviar formulário e salvar a assinatura como imagem
-    document.getElementById("formulario").addEventListener("submit", function(e) {
-      e.preventDefault(); // não deixar enviar de verdade
+    // Baixar CSV
+    const link = document.createElement("a");
+    link.download = "assinaturas.csv";
+    link.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    link.click();
+  });
+</script>
 
-      const nome = document.getElementById("nome").value.trim();
-      const sap = document.getElementById("sap").value.trim();
-
-      if (!nome || !sap) {
-        alert("Preencha o nome e SAP antes de salvar.");
-        return;
-      }
-
-      // Criar link para baixar a imagem
-      const link = document.createElement("a");
-      link.download = `${nome} - ${sap}.png`; 
-      link.href = canvas.toDataURL("image/png"); // transforma o canvas em img
-      link.click();
-    });
-  </script>
 </body>
 </html>
